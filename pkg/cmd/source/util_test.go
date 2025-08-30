@@ -20,7 +20,6 @@ package source
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,15 +37,7 @@ func TestCorrectFileValuesButNotFound(t *testing.T) {
 	assert.False(t, value2)
 }
 
-func isWindows() bool {
-	return runtime.GOOS == "windows"
-}
-
 func TestPermissionDenied(t *testing.T) {
-
-	if isWindows() {
-		t.Skip("Test not reliably producing a result on a windows OS")
-	}
 
 	dir, err := os.MkdirTemp("/tmp", "camel-k-")
 	require.NoError(t, err)
