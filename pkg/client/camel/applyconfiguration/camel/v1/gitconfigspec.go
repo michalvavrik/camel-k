@@ -24,6 +24,8 @@ package v1
 type GitConfigSpecApplyConfiguration struct {
 	URL    *string `json:"url,omitempty"`
 	Secret *string `json:"secret,omitempty"`
+	Branch *string `json:"branch,omitempty"`
+	Tag    *string `json:"tag,omitempty"`
 }
 
 // GitConfigSpecApplyConfiguration constructs a declarative configuration of the GitConfigSpec type for use with
@@ -45,5 +47,21 @@ func (b *GitConfigSpecApplyConfiguration) WithURL(value string) *GitConfigSpecAp
 // If called multiple times, the Secret field is set to the value of the last call.
 func (b *GitConfigSpecApplyConfiguration) WithSecret(value string) *GitConfigSpecApplyConfiguration {
 	b.Secret = &value
+	return b
+}
+
+// WithBranch sets the Branch field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Branch field is set to the value of the last call.
+func (b *GitConfigSpecApplyConfiguration) WithBranch(value string) *GitConfigSpecApplyConfiguration {
+	b.Branch = &value
+	return b
+}
+
+// WithTag sets the Tag field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Tag field is set to the value of the last call.
+func (b *GitConfigSpecApplyConfiguration) WithTag(value string) *GitConfigSpecApplyConfiguration {
+	b.Tag = &value
 	return b
 }
