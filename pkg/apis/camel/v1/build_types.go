@@ -115,6 +115,10 @@ type BuilderTask struct {
 type GitConfigSpec struct {
 	// the URL of the project
 	URL string `json:"url,omitempty"`
+	// the Git Branch to check out; mutually exclusive with the Tag
+	Branch string `json:"branch,omitempty"`
+	// the Git Tag to check out; mutually exclusive with the Branch
+	Tag string `json:"tag,omitempty"`
 	// the Kubernetes secret where token is stored
 	Secret string `json:"secret,omitempty"`
 }
