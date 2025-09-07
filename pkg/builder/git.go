@@ -18,9 +18,11 @@ limitations under the License.
 package builder
 
 import (
+	"errors"
 	"path/filepath"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,6 +61,17 @@ var Git = gitSteps{
 func cloneProject(ctx *builderContext) error {
 	gitCloneOptions := &git.CloneOptions{
 		URL: ctx.Build.Git.URL,
+	}
+
+	if ctx.Build.Git.Branch != "" {
+		if ctx.Build.Git.Tag != "" {
+			return errors.New("illegal arguments: cannot specify both git branch and git tag")
+		}
+		gitCloneOptions.ReferenceName = plumbing.NewBranchReferenceName(ctx.Build.Git.Branch)
+	}
+
+	if ctx.Build.Git.Tag != "" {
+		gitCloneOptions.ReferenceName = plumbing.NewTagReferenceName(ctx.Build.Git.Tag)
 	}
 
 	if ctx.Build.Git.Secret != "" {
