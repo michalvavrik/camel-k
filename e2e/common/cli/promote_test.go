@@ -24,13 +24,13 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/gomega"
 
-	. "github.com/apache/camel-k/v2/e2e/support"
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
 )
 
@@ -44,6 +44,7 @@ func TestKamelPromoteGitOps(t *testing.T) {
 			g.Eventually(IntegrationPodPhase(t, ctx, ns, "yaml"), TestTimeoutShort).Should(Equal(corev1.PodRunning))
 			g.Eventually(IntegrationLogs(t, ctx, ns, "yaml"), TestTimeoutShort).Should(ContainSubstring("Magicstring!"))
 		})
+		fmt.Println("test CI!!!!!!!!!!!!!!!!!!!!")
 		WithNewTestNamespace(t, func(ctx context.Context, g *WithT, nsTarget string) {
 			// Export to GitOps directory structure
 			tmpDir := t.TempDir()

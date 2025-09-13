@@ -33,5 +33,5 @@ resources:
 
 images:
 - name: docker.io/apache/camel-k
-  newName: docker.io/apache/camel-k
+  newName: quay.io/rh_ee_mvavrik/camel-k
   newTag: 2.8.0-SNAPSHOT

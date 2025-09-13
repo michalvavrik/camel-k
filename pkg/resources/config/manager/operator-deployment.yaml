@@ -46,7 +46,7 @@ spec:
       serviceAccountName: camel-k-operator
       containers:
         - name: camel-k-operator
-          image: docker.io/apache/camel-k:2.8.0-SNAPSHOT
+          image: quay.io/rh_ee_mvavrik/camel-k:2.8.0-SNAPSHOT
           imagePullPolicy: IfNotPresent
           command:
             - kamel
