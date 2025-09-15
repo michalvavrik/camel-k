@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
@@ -28,6 +29,10 @@ import (
 	"github.com/apache/camel-k/v2/pkg/internal"
 	"github.com/apache/camel-k/v2/pkg/platform"
 	"github.com/apache/camel-k/v2/pkg/util/defaults"
+	"github.com/apache/camel-k/v2/pkg/util/io"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -545,59 +550,9 @@ status: {}
 `
 
 func TestIntegrationGitOps(t *testing.T) {
-	srcPlatform := v1.NewIntegrationPlatform("default", platform.DefaultPlatformName)
-	srcPlatform.Status.Version = defaults.Version
-	srcPlatform.Status.Build.RuntimeVersion = defaults.DefaultRuntimeVersion
-	srcPlatform.Status.Phase = v1.IntegrationPlatformPhaseReady
-	dstPlatform := v1.NewIntegrationPlatform("prod-namespace", platform.DefaultPlatformName)
-	dstPlatform.Status.Version = defaults.Version
-	dstPlatform.Status.Build.RuntimeVersion = defaults.DefaultRuntimeVersion
-	dstPlatform.Status.Phase = v1.IntegrationPlatformPhaseReady
-	defaultIntegration, defaultKit := nominalIntegration("my-it-test")
-	defaultIntegration.Status.Traits = &v1.Traits{
-		Affinity: &trait.AffinityTrait{
-			NodeAffinityLabels: []string{"my-node"},
-		},
-		Camel: &trait.CamelTrait{
-			Properties: []string{"my.property=val"},
-		},
-		Container: &trait.ContainerTrait{
-			LimitCPU:        "1",
-			LimitMemory:     "1024Mi",
-			RequestCPU:      "0.5",
-			RequestMemory:   "512Mi",
-			Port:            2000,
-			ImagePullPolicy: corev1.PullAlways,
-		},
-		Environment: &trait.EnvironmentTrait{
-			Vars: []string{"MY_VAR=val"},
-		},
-		JVM: &trait.JVMTrait{
-			Jar:     "my.jar",
-			Options: []string{"-XMX 123"},
-		},
-		Mount: &trait.MountTrait{
-			Configs: []string{"configmap:my-cm", "secret:my-sec"},
-		},
-		Service: &trait.ServiceTrait{
-			Trait: trait.Trait{
-				Enabled: ptr.To(true),
-			},
-			Auto: ptr.To(false),
-			Annotations: map[string]string{
-				"my-annotation": "123",
-			},
-		},
-		Toleration: &trait.TolerationTrait{
-			Taints: []string{"taint1:true"},
-		},
-	}
-	srcCatalog := createTestCamelCatalog(srcPlatform)
-	dstCatalog := createTestCamelCatalog(dstPlatform)
-
+	promoteCmd := prepareMyIntegrationTestPromoteCmd(t)
 	tmpDir := t.TempDir()
 
-	_, promoteCmd, _ := initializePromoteCmdOptions(t, &srcPlatform, &dstPlatform, &defaultIntegration, &defaultKit, &srcCatalog, &dstCatalog)
 	output, err := ExecuteCommand(promoteCmd, cmdPromote, "my-it-test", "--to", "prod-namespace", "--export-gitops-dir", tmpDir, "-n", "default")
 	require.NoError(t, err)
 	assert.Contains(t, output, `Exported a Kustomize based Gitops directory`)
@@ -666,6 +621,23 @@ status: {}
 `
 
 func TestPipeGitOps(t *testing.T) {
+	promoteCmd := prepareMyPipeTestPromoteCmd(t)
+	tmpDir := t.TempDir()
+
+	output, err := ExecuteCommand(promoteCmd, cmdPromote, "my-pipe-test", "--to", "prod-namespace", "--export-gitops-dir", tmpDir, "-n", "default")
+	require.NoError(t, err)
+	assert.Contains(t, output, `Exported a Kustomize based Gitops directory`)
+
+	baseIt, err := os.ReadFile(filepath.Join(tmpDir, "my-pipe-test", "base", "pipe.yaml"))
+	require.NoError(t, err)
+	assert.Equal(t, expectedGitOpsPipe, string(baseIt))
+
+	patchPipe, err := os.ReadFile(filepath.Join(tmpDir, "my-pipe-test", "overlays", "prod-namespace", "patch-pipe.yaml"))
+	require.NoError(t, err)
+	assert.Equal(t, expectedGitOpsPipePatch, string(patchPipe))
+}
+
+func prepareMyPipeTestPromoteCmd(t *testing.T) *cobra.Command {
 	srcPlatform := v1.NewIntegrationPlatform("default", platform.DefaultPlatformName)
 	srcPlatform.Status.Version = defaults.Version
 	srcPlatform.Status.Build.RuntimeVersion = defaults.DefaultRuntimeVersion
@@ -699,18 +671,189 @@ func TestPipeGitOps(t *testing.T) {
 	srcCatalog := createTestCamelCatalog(srcPlatform)
 	dstCatalog := createTestCamelCatalog(dstPlatform)
 
+	_, promoteCmd, _ := initializePromoteCmdOptions(t, &srcPlatform, &dstPlatform, &defaultKB, &defaultIntegration, &defaultKit, &srcCatalog, &dstCatalog)
+
+	return promoteCmd
+}
+
+func prepareMyIntegrationTestPromoteCmd(t *testing.T) *cobra.Command {
+	srcPlatform := v1.NewIntegrationPlatform("default", platform.DefaultPlatformName)
+	srcPlatform.Status.Version = defaults.Version
+	srcPlatform.Status.Build.RuntimeVersion = defaults.DefaultRuntimeVersion
+	srcPlatform.Status.Phase = v1.IntegrationPlatformPhaseReady
+	dstPlatform := v1.NewIntegrationPlatform("prod-namespace", platform.DefaultPlatformName)
+	dstPlatform.Status.Version = defaults.Version
+	dstPlatform.Status.Build.RuntimeVersion = defaults.DefaultRuntimeVersion
+	dstPlatform.Status.Phase = v1.IntegrationPlatformPhaseReady
+	defaultIntegration, defaultKit := nominalIntegration("my-it-test")
+	defaultIntegration.Status.Traits = &v1.Traits{
+		Affinity: &trait.AffinityTrait{
+			NodeAffinityLabels: []string{"my-node"},
+		},
+		Camel: &trait.CamelTrait{
+			Properties: []string{"my.property=val"},
+		},
+		Container: &trait.ContainerTrait{
+			LimitCPU:        "1",
+			LimitMemory:     "1024Mi",
+			RequestCPU:      "0.5",
+			RequestMemory:   "512Mi",
+			Port:            2000,
+			ImagePullPolicy: corev1.PullAlways,
+		},
+		Environment: &trait.EnvironmentTrait{
+			Vars: []string{"MY_VAR=val"},
+		},
+		JVM: &trait.JVMTrait{
+			Jar:     "my.jar",
+			Options: []string{"-XMX 123"},
+		},
+		Mount: &trait.MountTrait{
+			Configs: []string{"configmap:my-cm", "secret:my-sec"},
+		},
+		Service: &trait.ServiceTrait{
+			Trait: trait.Trait{
+				Enabled: ptr.To(true),
+			},
+			Auto: ptr.To(false),
+			Annotations: map[string]string{
+				"my-annotation": "123",
+			},
+		},
+		Toleration: &trait.TolerationTrait{
+			Taints: []string{"taint1:true"},
+		},
+	}
+	srcCatalog := createTestCamelCatalog(srcPlatform)
+	dstCatalog := createTestCamelCatalog(dstPlatform)
+
+	_, promoteCmd, _ := initializePromoteCmdOptions(t, &srcPlatform, &dstPlatform, &defaultIntegration, &defaultKit, &srcCatalog, &dstCatalog)
+
+	return promoteCmd
+}
+
+func TestIntegrationGitOpsWithPush(t *testing.T) {
+	promoteCmd := prepareMyIntegrationTestPromoteCmd(t)
 	tmpDir := t.TempDir()
 
-	_, promoteCmd, _ := initializePromoteCmdOptions(t, &srcPlatform, &dstPlatform, &defaultKB, &defaultIntegration, &defaultKit, &srcCatalog, &dstCatalog)
-	output, err := ExecuteCommand(promoteCmd, cmdPromote, "my-pipe-test", "--to", "prod-namespace", "--export-gitops-dir", tmpDir, "-n", "default")
+	repo, err := git.PlainInit(tmpDir, false)
 	require.NoError(t, err)
-	assert.Contains(t, output, `Exported a Kustomize based Gitops directory`)
+	_, err = repo.Head()
+	// here we test default git branch without initial commit (empty git repo)
+	require.Error(t, err, "HEAD reference should not be found")
 
-	baseIt, err := os.ReadFile(filepath.Join(tmpDir, "my-pipe-test", "base", "pipe.yaml"))
-	require.NoError(t, err)
-	assert.Equal(t, expectedGitOpsPipe, string(baseIt))
+	runCmd := func() {
+		output, err := ExecuteCommand(promoteCmd, cmdPromote, "my-it-test", "--to", "prod-namespace",
+			"--export-gitops-dir", tmpDir, "-n", "default", "--push-gitops-dir")
+		require.NoError(t, err)
+		assert.Contains(t, output, `Exported a Kustomize based Gitops directory`)
+	}
 
-	patchPipe, err := os.ReadFile(filepath.Join(tmpDir, "my-pipe-test", "overlays", "prod-namespace", "patch-pipe.yaml"))
+	assertGitOpsExportWithPush(t, "my-it-test", "integration.yaml", "patch-integration.yaml", tmpDir, repo, runCmd)
+}
+
+func TestPipeGitOpsWithPush(t *testing.T) {
+	promoteCmd := prepareMyPipeTestPromoteCmd(t)
+	tmpDir := t.TempDir()
+
+	repo, err := git.PlainInit(tmpDir, false)
 	require.NoError(t, err)
-	assert.Equal(t, expectedGitOpsPipePatch, string(patchPipe))
+	// here we test custom branch
+	workTree, err := repo.Worktree()
+	require.NoError(t, err)
+	_, err = workTree.Commit("initial commit", &git.CommitOptions{
+		AllowEmptyCommits: true,
+	})
+	require.NoError(t, err)
+	const customBranch = "my-custom-branch"
+	err = workTree.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(customBranch),
+		Create: true,
+	})
+	require.NoError(t, err)
+
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: "my-remote",
+		URLs: []string{"https://github.com/apache/camel-k.git"},
+	})
+	require.NoError(t, err)
+
+	runCmd := func() {
+		output, err := ExecuteCommand(promoteCmd, cmdPromote, "my-pipe-test", "--to", "prod-namespace",
+			"--export-gitops-dir", tmpDir, "-n", "default", "--push-gitops-dir")
+		require.NoError(t, err)
+		assert.Contains(t, output, `Exported a Kustomize based Gitops directory`)
+	}
+
+	assertGitOpsExportWithPush(t, "my-pipe-test", "pipe.yaml", "patch-pipe.yaml", tmpDir, repo, runCmd)
+}
+
+func assertGitOpsExportWithPush(t *testing.T, projectName, baseOverlayFileName, otherOverlayFileName,
+	tmpDir string, repo *git.Repository, runCmd func()) {
+	runCmd()
+
+	_, err := os.Stat(filepath.Join(tmpDir, projectName, "base", baseOverlayFileName))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tmpDir, projectName, "base", "kustomization.yaml"))
+	require.NoError(t, err)
+
+	_, err = os.Stat(filepath.Join(tmpDir, projectName, "overlays", "prod-namespace", otherOverlayFileName))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tmpDir, projectName, "overlays", "prod-namespace", "kustomization.yaml"))
+	require.NoError(t, err)
+
+	// check git commit
+	headAfter, err := repo.Head()
+	require.NoError(t, err)
+	assert.NotNil(t, headAfter)
+	assert.NotEmpty(t, headAfter.Hash())
+	commit, err := repo.CommitObject(headAfter.Hash())
+	require.NoError(t, err)
+	commitStats, err := commit.Stats()
+	require.NoError(t, err)
+	requiredFiles := []string{filepath.Join(projectName, baseOverlayDirName, "kustomization.yaml"),
+		filepath.Join(projectName, baseOverlayDirName, baseOverlayFileName)}
+	for _, fileStat := range commitStats {
+		assert.Contains(t, requiredFiles, fileStat.Name)
+	}
+	assert.Contains(t, commit.Message, "add GitOps base overlay")
+
+	// check created branch
+	currentHead, err := repo.Head()
+	require.NoError(t, err)
+	assert.Contains(t, currentHead.Name().Short(), "camel-k-gitops-export-")
+
+	// check that running command that generates the same files as are already in the git repo won't result in an error
+	runCmd()
+
+	// make some changes so that we can test git repository update
+	baseKustomizationPath := filepath.Join(tmpDir, projectName, baseOverlayDirName, "kustomization.yaml")
+	content, err := os.ReadFile(baseKustomizationPath)
+	require.NoError(t, err)
+	newContent := strings.ReplaceAll(string(content), baseOverlayFileName, "whatever")
+	err = os.WriteFile(baseKustomizationPath, []byte(newContent), io.FilePerm755)
+	require.NoError(t, err)
+	workTree, err := repo.Worktree()
+	require.NoError(t, err)
+	_, err = workTree.Add(filepath.Join(projectName, baseOverlayDirName, "kustomization.yaml"))
+	require.NoError(t, err)
+	_, err = workTree.Commit("Update kustomization.yaml", &git.CommitOptions{
+		AllowEmptyCommits: false,
+	})
+	require.NoError(t, err)
+
+	// test update
+	runCmd()
+	headAfter, err = repo.Head()
+	require.NoError(t, err)
+	assert.NotNil(t, headAfter)
+	assert.NotEmpty(t, headAfter.Hash())
+	commit, err = repo.CommitObject(headAfter.Hash())
+	require.NoError(t, err)
+	commitStats, err = commit.Stats()
+	require.NoError(t, err)
+	for _, fileStat := range commitStats {
+		assert.Contains(t, filepath.Join(projectName, baseOverlayDirName, "kustomization.yaml"), fileStat.Name)
+	}
+	assert.Contains(t, commit.Message, "update GitOps base overlay")
 }
