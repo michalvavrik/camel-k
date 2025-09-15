@@ -35,7 +35,7 @@ const (
 	LocalRepository = "/etc/maven/m2"
 
 	// ImageName --
-	ImageName = "docker.io/apache/camel-k"
+	ImageName = "quay.io/rh_ee_mvavrik/camel-k"
 
 	// OpenShiftRegistryAddress --
 	OpenShiftRegistryAddress = "image-registry.openshift-image-registry.svc:5000"
