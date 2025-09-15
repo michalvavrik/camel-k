@@ -31,6 +31,7 @@ import (
 	"github.com/apache/camel-k/v2/pkg/util/io"
 	"github.com/apache/camel-k/v2/pkg/util/kubernetes"
 	"github.com/apache/camel-k/v2/pkg/util/sets"
+	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,17 +56,19 @@ func newCmdPromote(rootCmdOptions *RootCmdOptions) (*cobra.Command, *promoteCmdO
 	cmd.Flags().StringP("output", "o", "", "Output format. One of: json|yaml")
 	cmd.Flags().BoolP("image", "i", false, "Output the container image only")
 	cmd.Flags().String("export-gitops-dir", "", "Export to a Kustomize GitOps overlay structure")
+	cmd.Flags().Bool("push-gitops-dir", false, "Export to a Kustomize GitOps overlay structure") // FIXME: rewrite me!
 
 	return &cmd, &options
 }
 
 type promoteCmdOptions struct {
 	*RootCmdOptions
-	To           string `mapstructure:"to" yaml:",omitempty"`
-	ToOperator   string `mapstructure:"to-operator" yaml:",omitempty"`
-	OutputFormat string `mapstructure:"output" yaml:",omitempty"`
-	Image        bool   `mapstructure:"image" yaml:",omitempty"`
-	ToGitOpsDir  string `mapstructure:"export-gitops-dir" yaml:",omitempty"`
+	To            string `mapstructure:"to" yaml:",omitempty"`
+	ToOperator    string `mapstructure:"to-operator" yaml:",omitempty"`
+	OutputFormat  string `mapstructure:"output" yaml:",omitempty"`
+	Image         bool   `mapstructure:"image" yaml:",omitempty"`
+	ToGitOpsDir   string `mapstructure:"export-gitops-dir" yaml:",omitempty"`
+	PushGitOpsDir bool   `mapstructure:"push-gitops-dir" yaml:",omitempty"`
 }
 
 func (o *promoteCmdOptions) validate(_ *cobra.Command, args []string) error {
@@ -79,6 +82,10 @@ func (o *promoteCmdOptions) validate(_ *cobra.Command, args []string) error {
 		return errors.New("source and destination namespaces must be different in order to avoid promoted Integration/Pipe " +
 			"clashes with the source Integration/Pipe")
 	}
+	if o.PushGitOpsDir && o.ToGitOpsDir == "" {
+		return errors.New("--push-gitops-dir requires --export-gitops-dir to specify the GitOps directory")
+	}
+
 	return nil
 }
 
@@ -151,6 +158,10 @@ func (o *promoteCmdOptions) run(cmd *cobra.Command, args []string) error {
 				return err
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), `Exported a Kustomize based Gitops directory to `+o.ToGitOpsDir+` for "`+name+`" Pipe`)
+			if o.PushGitOpsDir {
+				err = pushGitOpsDirAndOpenPr(destPipe.Name, o.ToGitOpsDir, `"`+name+`" Pipe`)
+				return err
+			}
 			return nil
 		}
 		replaced, err := o.replaceResource(destPipe)
@@ -176,6 +187,10 @@ func (o *promoteCmdOptions) run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), `Exported a Kustomize based Gitops directory to `+o.ToGitOpsDir+` for "`+name+`" Integration`)
+		if o.PushGitOpsDir {
+			err = pushGitOpsDirAndOpenPr(destIntegration.Name, o.ToGitOpsDir, `"`+name+`" Integration`)
+			return err
+		}
 		return nil
 	}
 
@@ -406,6 +421,8 @@ kind: Kustomization
 resources:
 `
 
+const baseOverlayDirName = "base"
+
 // appendKustomizeIntegration creates a Kustomize GitOps based directory structure for the chosen Integration.
 func appendKustomizeIntegration(dstIt *v1.Integration, destinationDir string) error {
 	namespaceDest := dstIt.Namespace
@@ -433,7 +450,7 @@ func appendKustomizeIntegration(dstIt *v1.Integration, destinationDir string) er
 		}
 	}
 
-	newpath = filepath.Join(destinationDir, appFolderName, "base")
+	newpath = filepath.Join(destinationDir, appFolderName, baseOverlayDirName)
 	err = os.MkdirAll(newpath, io.FilePerm755)
 	if err != nil {
 		return err
@@ -548,7 +565,7 @@ func appendKustomizePipe(dstPipe *v1.Pipe, destinationDir string) error {
 	}
 	appFolderName := strings.ToLower(basePipe.Name)
 
-	newpath := filepath.Join(destinationDir, appFolderName, "base")
+	newpath := filepath.Join(destinationDir, appFolderName, baseOverlayDirName)
 	err := os.MkdirAll(newpath, io.FilePerm755)
 	if err != nil {
 		return err
@@ -641,4 +658,127 @@ func isPipeTraitPatch(keyAnnotation string) bool {
 	}
 
 	return false
+}
+
+func pushGitOpsDirAndOpenPr(promotionName, destinationDir, printName string) error {
+	appFolderName := strings.ToLower(promotionName)
+	basePath := filepath.Join(destinationDir, appFolderName, baseOverlayDirName)
+	if _, err := os.Stat(basePath); err != nil {
+		return err
+	}
+
+	// Get git repository
+	repo, err := git.PlainOpenWithOptions(basePath, &git.PlainOpenOptions{
+		DetectDotGit: true,
+	})
+	if err != nil {
+		return errors.New(`failed to open git repository at path "` + basePath + `": ` + err.Error())
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("failed to get git worktree: %w", err)
+	}
+	status, err := worktree.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get git status: %w", err)
+	}
+
+	// FIXME: validate no staged changes, if they are there, warn but continue
+
+	// Add changed files in the base overlay directory and detect whether the files are updated or created
+	baseSubPath := filepath.Join(appFolderName, baseOverlayDirName)
+	containsNewFiles := false
+	for file, fileStatus := range status {
+		if strings.Contains(file, baseSubPath) && (fileStatus.Worktree == git.Untracked || fileStatus.Worktree == git.Modified) {
+			_, err := worktree.Add(file)
+			if err != nil {
+				return fmt.Errorf(`failed to add file "%s" to git repository: %w`, file, err)
+			}
+			if !containsNewFiles && fileStatus.Worktree == git.Untracked {
+				containsNewFiles = true
+			}
+		}
+	}
+
+	// Commit git changes
+	var commitMsg string
+	if containsNewFiles {
+		commitMsg = fmt.Sprintf("chore: add GitOps base overlay for %s\n\nGenerated by Camel K promote command", printName)
+	} else {
+		commitMsg = fmt.Sprintf("chore: update GitOps base overlay for %s\n\nGenerated by Camel K promote command", printName)
+	}
+	commit, err := worktree.Commit(commitMsg, &git.CommitOptions{
+		AllowEmptyCommits: false,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to commit git changes: %w", err)
+	}
+
+	// FIXME: validate that this is not the default branch, if it is, warn and exit
+
+	// FIXME: remove next block
+	if containsNewFiles {
+		fmt.Println(printName + " contains new files!! " + commit.String())
+	}
+
+	return nil
+
+	// FIXME: look for other changes included in this directory, if there are other changes, they must not be staged? if they are, warn
+	// FIXME: go over changes in current dir and "git add" only for untracked in our file
+
+	//// Get current branch
+	//head, err := repo.Head()
+	//if err != nil {
+	//	return fmt.Errorf("failed to get current branch: %w", err)
+	//}
+	//currentBranchName := head.Name().Short()
+	//
+	//// Get remote origin
+	//remote, err := repo.Remote("origin")
+	//if err != nil {
+	//	return fmt.Errorf("failed to get origin remote: %w", err)
+	//}
+	//
+	//// Get default branch - try common names
+	//refs, err := remote.List(&git.ListOptions{})
+	//if err != nil {
+	//	return fmt.Errorf("failed to list remote references: %w", err)
+	//}
+	//
+	//var defaultBranchName string
+	//for _, ref := range refs {
+	//	if ref.Name().String() == "refs/heads/main" {
+	//		defaultBranchName = "main"
+	//		break
+	//	} else if ref.Name().String() == "refs/heads/master" {
+	//		defaultBranchName = "master"
+	//		break
+	//	}
+	//}
+	//if defaultBranchName == "" {
+	//	return fmt.Errorf("could not determine default branch (main/master not found)")
+	//}
+	//
+	//// Check if current branch is the default branch
+	//if currentBranchName == defaultBranchName {
+	//	return fmt.Errorf("current branch '%s' is the default branch - please create a feature branch first", currentBranchName)
+	//}
+	//
+	//// Push to origin current branch
+	//err = repo.Push(&git.PushOptions{
+	//	RemoteName: "origin",
+	//	RefSpecs: []config.RefSpec{
+	//		config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", currentBranchName,
+	//			currentBranchName)),
+	//	},
+	//})
+	//if err != nil && err != git.NoErrAlreadyUpToDate {
+	//	return fmt.Errorf("failed to push to origin/%s: %w", currentBranchName, err)
+	//}
+
+	// verify that current branch does not track 'origin' remote default branch, if it does, end with warning
+	// if it doesn't, push to the 'origin' current branch
+	// open github pr against default git branch
+	// validate that PR only contains our commit and no other
+	return nil // FIXME: impl. me!
 }
