@@ -146,3 +146,132 @@ The CLI will add a patch configuration for any of the following trait configurat
 * Toleration configuration
 
 NOTE: feel free to ask to add any further configuration you require.
+
+=== Automated GitOps with GitHub Integration
+
+NOTE: this feature is available starting from version 2.7
+
+The `--push-gitops-dir` flag extends the GitOps functionality by automatically committing changes to git and creating a GitHub Pull Request. This provides a complete GitOps automation workflow:
+
+```
+$ kamel promote promote-server -n development --to production --export-gitops-dir /tmp/integrations --push-gitops-dir
+Exported a Kustomize based Gitops directory to /tmp/integrations for "promote-server" Integration
+Created git commit with the GitOps base overlay
+Created GitHub PR with the base overlay from exported GitOps directory: https://github.com/owner/repo/pull/123
+```
+
+==== Git Workflow
+
+When using `--push-gitops-dir`, the following automated workflow is executed:
+
+1. **Export GitOps structure** - Creates the Kustomize base/overlays directory structure
+2. **Create git branch** - Generates a new branch named `camel-k-gitops-export-{timestamp}`
+3. **Commit changes** - Stages and commits only the base overlay files to git
+4. **Push to remote** - Pushes the new branch to the configured git remote
+5. **Create GitHub PR** - Opens a Pull Request against the currently checked out branch
+
+IMPORTANT: Only the base overlay files are committed to git. The environment-specific overlays are created locally but not committed, allowing teams to manage environment configurations separately.
+
+==== Prerequisites
+
+Before using `--push-gitops-dir`, ensure the following requirements are met:
+
+* The GitOps directory must be within a git repository
+* The current HEAD must be a branch (not a detached HEAD)
+* The base branch must exist on the remote repository
+* Appropriate authentication must be configured (see Authentication section below)
+
+==== Authentication
+
+===== GitHub Token (Required)
+
+Set the `GITHUB_TOKEN` environment variable for both git push (HTTPS URLs) and GitHub PR creation:
+
+```
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+The token requires the following permissions:
+* `repo` scope for private repositories
+* `public_repo` scope for public repositories
+
+===== Git Authentication
+
+**HTTPS URLs (Recommended):**
+
+For HTTPS git URLs (e.g., `https://github.com/owner/repo.git`), authentication is handled automatically using the `GITHUB_TOKEN`:
+
+```
+git remote set-url origin https://github.com/owner/repo.git
+```
+
+**SSH URLs:**
+
+For SSH git URLs (e.g., `git@github.com:owner/repo.git`), ensure proper SSH key configuration:
+
+```
+# Add GitHub's public key to known_hosts
+ssh-keyscan -t ecdsa github.com >> ~/.ssh/known_hosts
+
+# Test SSH connection
+ssh -T git@github.com
+```
+
+If you have multiple SSH keys, you can specify which key to use:
+
+```
+export KAMEL_SSH_KEY_PATH=/path/to/your/private/key
+export KAMEL_SSH_KEY_PASSPHRASE=your_passphrase  # if key is encrypted
+```
+
+Alternatively, configure SSH to use the correct key:
+
+```
+# Add to ~/.ssh/config
+Host github.com
+    IdentityFile ~/.ssh/your_github_key
+    IdentitiesOnly yes
+```
+
+==== Error Handling
+
+Common issues and solutions:
+
+**Base branch validation error:**
+```
+Error: git repository "path" HEAD must be a branch, but is: refs/heads/detached
+```
+Solution: Checkout a proper branch before running the command.
+
+**Remote branch not found:**
+```
+Error: 422 Validation Failed [{Resource:PullRequest Field:base Code:invalid Message:}]
+```
+Solution: Ensure the current branch exists on the remote repository.
+
+**SSH authentication failure:**
+```
+Error: ssh: handshake failed: knownhosts: key mismatch
+```
+Solution: Update known_hosts with GitHub's current public keys using `ssh-keyscan`.
+
+==== Branch Management
+
+The command creates a new feature branch for each promotion to avoid conflicts. The Pull Request is created against the branch that was checked out when the promote command was executed. This allows teams to:
+
+* Work on multiple promotions simultaneously
+* Review changes before merging
+* Maintain a clean git history
+* Integrate with existing GitOps workflows
+
+Example workflow:
+```
+# Start from main branch
+git checkout main
+
+# Promote and create PR against main
+kamel promote my-integration -n dev --to prod --export-gitops-dir ./gitops --push-gitops-dir
+
+# The PR will be created with base branch = main
+# Head branch = camel-k-gitops-export-{timestamp}
+```
