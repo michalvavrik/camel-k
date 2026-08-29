@@ -34,12 +34,10 @@ jobs:
 
       - name: Knative-related unit tests
         run: |
-          go test -count=1 -v \
-            ./pkg/util/knative/... \
-            ./pkg/internal/knative/... \
-            ./pkg/util/reference/... \
-            ./pkg/util/bindings/... \
-            ./pkg/apis/camel/v1/... 2>&1 | tail -60
+          echo "---- core knative packages (verbose) ----"
+          go test -count=1 -v ./pkg/util/knative/... ./pkg/internal/knative/...
+          echo "---- related packages ----"
+          go test -count=1 ./pkg/util/reference/... ./pkg/util/bindings/... ./pkg/apis/camel/v1/...
           echo "---- trait knative subset ----"
           go test -count=1 -v ./pkg/trait/ -run 'Knative|SinkBinding|Sink|Channel|Broker|Trigger|Golden'
           echo "---- controller integration knative subset ----"
