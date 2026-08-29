@@ -41,4 +41,6 @@ jobs:
             ./pkg/util/bindings/... \
             ./pkg/apis/camel/v1/... 2>&1 | tail -60
           echo "---- trait knative subset ----"
-          go test -count=1 ./pkg/trait/ -run 'Knative|SinkBinding|Sink|Channel|Broker|Trigger'
+          go test -count=1 -v ./pkg/trait/ -run 'Knative|SinkBinding|Sink|Channel|Broker|Trigger|Golden'
+          echo "---- controller integration knative subset ----"
+          go test -count=1 -v ./pkg/controller/integration/ -run 'Knative'

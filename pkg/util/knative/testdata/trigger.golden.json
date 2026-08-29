@@ -1,0 +1,25 @@
+{
+  "kind": "Trigger",
+  "apiVersion": "eventing.knative.dev/v1",
+  "metadata": {
+    "name": "default-my-service-evttype",
+    "namespace": "my-ns"
+  },
+  "spec": {
+    "broker": "default",
+    "filter": {
+      "attributes": {
+        "type": "evt.type"
+      }
+    },
+    "subscriber": {
+      "ref": {
+        "kind": "Service",
+        "name": "my-service",
+        "apiVersion": "serving.knative.dev/v1"
+      },
+      "uri": "/events/evt.type"
+    }
+  },
+  "status": {}
+}

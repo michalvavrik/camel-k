@@ -1,0 +1,23 @@
+{
+  "kind": "SinkBinding",
+  "apiVersion": "sources.knative.dev/v1",
+  "metadata": {
+    "name": "my-source",
+    "namespace": "my-ns"
+  },
+  "spec": {
+    "sink": {
+      "ref": {
+        "kind": "Channel",
+        "name": "my-channel",
+        "apiVersion": "messaging.knative.dev/v1"
+      }
+    },
+    "subject": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "name": "my-source"
+    }
+  },
+  "status": {}
+}

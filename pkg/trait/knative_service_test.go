@@ -495,7 +495,88 @@ func TestKnativeServiceWithTimeoutSeconds(t *testing.T) {
 	assert.Equal(t, *ksvc.Spec.Template.Spec.TimeoutSeconds, int64(44))
 }
 
+func TestKnativeServiceWithAutoscalingConfiguration(t *testing.T) {
+	target := 80
+	environment := createKnativeServiceTestEnvironment(t, &traitv1.KnativeServiceTrait{
+		Class:  "hpa.autoscaling.knative.dev",
+		Metric: "cpu",
+		Target: &target,
+	})
+	assert.NotEmpty(t, environment.ExecutedTraits)
+	assert.NotNil(t, environment.GetTrait("knative-service"))
+
+	ksvc := environment.Resources.GetKnativeService(func(service *serving.Service) bool {
+		return service.Name == KnativeServiceTestName
+	})
+	require.NotNil(t, ksvc)
+
+	annotations := ksvc.Spec.ConfigurationSpec.Template.Annotations
+	assert.Equal(t, "hpa.autoscaling.knative.dev", annotations[knativeServingClassAnnotation])
+	assert.Equal(t, "cpu", annotations[knativeServingMetricAnnotation])
+	assert.Equal(t, "80", annotations[knativeServingTargetAnnotation])
+}
+
+// When Replicas is set but no min/max scale is configured, the reconcile logic
+// must not leave any autoscaling scale annotation on the revision template.
+func TestKnativeServiceReplicasWithoutScaleAnnotations(t *testing.T) {
+	environment := createKnativeServiceTestEnvironmentWithReplicas(t, &traitv1.KnativeServiceTrait{}, ptr.To(int32(3)))
+
+	ksvc := environment.Resources.GetKnativeService(func(service *serving.Service) bool {
+		return service.Name == KnativeServiceTestName
+	})
+	require.NotNil(t, ksvc)
+
+	annotations := ksvc.Spec.ConfigurationSpec.Template.Annotations
+	_, hasMin := annotations[knativeServingMinScaleAnnotation]
+	_, hasMax := annotations[knativeServingMaxScaleAnnotation]
+	assert.False(t, hasMin, "minScale annotation must not be set when only Replicas is provided")
+	assert.False(t, hasMax, "maxScale annotation must not be set when only Replicas is provided")
+}
+
+// When Replicas is set together with min/max scale, the scale annotations must
+// reflect the trait's MinScale/MaxScale values (they win over Replicas).
+func TestKnativeServiceReplicasWithScaleAnnotations(t *testing.T) {
+	minScale := 2
+	maxScale := 7
+	environment := createKnativeServiceTestEnvironmentWithReplicas(t, &traitv1.KnativeServiceTrait{
+		MinScale: &minScale,
+		MaxScale: &maxScale,
+	}, ptr.To(int32(3)))
+
+	ksvc := environment.Resources.GetKnativeService(func(service *serving.Service) bool {
+		return service.Name == KnativeServiceTestName
+	})
+	require.NotNil(t, ksvc)
+
+	annotations := ksvc.Spec.ConfigurationSpec.Template.Annotations
+	assert.Equal(t, "2", annotations[knativeServingMinScaleAnnotation])
+	assert.Equal(t, "7", annotations[knativeServingMaxScaleAnnotation])
+}
+
+// MinScale=0 means scale-to-zero and must NOT emit a minScale annotation.
+func TestKnativeServiceScaleToZeroHasNoMinScaleAnnotation(t *testing.T) {
+	minScale := 0
+	environment := createKnativeServiceTestEnvironment(t, &traitv1.KnativeServiceTrait{
+		MinScale: &minScale,
+	})
+
+	ksvc := environment.Resources.GetKnativeService(func(service *serving.Service) bool {
+		return service.Name == KnativeServiceTestName
+	})
+	require.NotNil(t, ksvc)
+
+	annotations := ksvc.Spec.ConfigurationSpec.Template.Annotations
+	_, hasMin := annotations[knativeServingMinScaleAnnotation]
+	assert.False(t, hasMin, "minScale=0 (scale-to-zero) must not emit a minScale annotation")
+}
+
 func createKnativeServiceTestEnvironment(t *testing.T, trait *traitv1.KnativeServiceTrait) *Environment {
+	t.Helper()
+
+	return createKnativeServiceTestEnvironmentWithReplicas(t, trait, nil)
+}
+
+func createKnativeServiceTestEnvironmentWithReplicas(t *testing.T, trait *traitv1.KnativeServiceTrait, replicas *int32) *Environment {
 	t.Helper()
 
 	catalog, err := camel.DefaultCatalog()
@@ -551,6 +632,8 @@ func createKnativeServiceTestEnvironment(t *testing.T, trait *traitv1.KnativeSer
 		ExecutedTraits: make([]Trait, 0),
 		Resources:      kubernetes.NewCollection(),
 	}
+
+	environment.Integration.Spec.Replicas = replicas
 
 	_, _, err = traitCatalog.apply(environment)
 	require.NoError(t, err)

@@ -1,0 +1,26 @@
+{
+  "kind": "Subscription",
+  "apiVersion": "messaging.knative.dev/v1",
+  "metadata": {
+    "name": "my-channel-my-service",
+    "namespace": "my-ns"
+  },
+  "spec": {
+    "channel": {
+      "kind": "Channel",
+      "name": "my-channel",
+      "apiVersion": "messaging.knative.dev/v1"
+    },
+    "subscriber": {
+      "ref": {
+        "kind": "Service",
+        "name": "my-service",
+        "apiVersion": "serving.knative.dev/v1"
+      },
+      "uri": "/channels/my-channel"
+    }
+  },
+  "status": {
+    "physicalSubscription": {}
+  }
+}

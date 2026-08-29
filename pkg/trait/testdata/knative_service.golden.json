@@ -1,0 +1,40 @@
+{
+  "kind": "Service",
+  "apiVersion": "serving.knative.dev/v1",
+  "metadata": {
+    "name": "my-it",
+    "namespace": "my-ns",
+    "labels": {
+      "bindings.knative.dev/include": "true",
+      "camel.apache.org/integration": "my-it",
+      "networking.knative.dev/visibility": "cluster-local"
+    },
+    "annotations": {
+      "my-annotation": "my-value",
+      "serving.knative.dev/rolloutDuration": "60s"
+    }
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "camel.apache.org/integration": "my-it"
+        },
+        "annotations": {
+          "autoscaling.knative.dev/class": "hpa.autoscaling.knative.dev",
+          "autoscaling.knative.dev/maxScale": "5",
+          "autoscaling.knative.dev/metric": "cpu",
+          "autoscaling.knative.dev/minScale": "1",
+          "autoscaling.knative.dev/target": "80",
+          "kubectl.kubernetes.io/default-container": "integration"
+        }
+      },
+      "spec": {
+        "containers": null,
+        "serviceAccountName": "my-sa",
+        "timeoutSeconds": 44
+      }
+    }
+  },
+  "status": {}
+}
