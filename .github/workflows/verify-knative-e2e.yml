@@ -1,0 +1,75 @@
+# ---------------------------------------------------------------------------
+# VERIFICATION-ONLY e2e workflow (issue #6354 Knative duck-types migration).
+# Lives only on the dev-auto/camel-k-6354/* verification branches; NOT for the
+# upstream PR. Modeled faithfully on .github/workflows/knative.yml so the
+# result is representative of upstream CI, but:
+#   - triggers only on our verification branches / manual dispatch
+#   - the expensive job runs ONLY when the pushed commit message contains
+#     "[e2e]" (or via workflow_dispatch), so ordinary pushes stay quick.
+# Purpose: run the Knative e2e suite against REAL Knative, so if our
+# hand-rolled duck types ever drift from upstream Knative, this fails loudly.
+# ---------------------------------------------------------------------------
+name: verify-knative-e2e
+
+on:
+  push:
+    branches:
+      - 'dev-auto/camel-k-6354/**'
+  workflow_dispatch:
+    inputs:
+      test_run:
+        description: 'Optional -run regex to limit which Knative e2e tests execute (empty = all)'
+        required: false
+        default: ''
+
+concurrency:
+  group: verify-knative-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  knative-e2e:
+    # Only run the heavy e2e on explicit request.
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[e2e]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Infra setting
+        uses: ./.github/actions/infra-setting
+
+      - name: Install Knative
+        shell: bash
+        run: |
+          ./e2e/knative/files/setup.sh
+
+      - name: Create operator namespace
+        shell: bash
+        run: |
+          kubectl create ns camel-k
+
+      - name: Registry setting
+        uses: ./.github/actions/registry-setting
+
+      - name: Install operator
+        shell: bash
+        run: |
+          make install-k8s-global
+          # Install Apache Kamelets catalog
+          mvn -q dependency:copy -Dartifact=org.apache.camel.kamelets:camel-kamelets:4.18.1:jar -Dmdep.useBaseVersion=true -DoutputDirectory=/tmp
+          unzip /tmp/camel-kamelets-4.18.1.jar -d /tmp && kubectl apply -f /tmp/kamelets -n camel-k
+
+      - name: Run test
+        shell: bash
+        env:
+          TEST_RUN: ${{ github.event.inputs.test_run }}
+        run: |
+          if [ -n "${TEST_RUN}" ]; then
+            echo "Limiting Knative e2e to -run ${TEST_RUN}"
+            DO_TEST_PREBUILD=false go test -timeout 60m -v ./e2e/knative -tags=integration -run "${TEST_RUN}" 2>&1 | tee /tmp/knative-e2e.log
+          else
+            DO_TEST_PREBUILD=false GOTESTFMT="-json 2>&1 | gotestfmt" make test-knative
+          fi
