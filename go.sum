@@ -144,8 +144,6 @@ github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/google/go-containerregistry v0.20.3 h1:oNx7IdTI936V8CQRveCjaxOiegWwvM7kqkbXTpyiovI=
-github.com/google/go-containerregistry v0.20.3/go.mod h1:w00pIgBRDVUDFM6bq+Qx8lwNWK+cxgCuX1vd3PIBDNI=
 github.com/google/go-github/v72 v72.0.0 h1:FcIO37BLoVPBO9igQQ6tStsv2asG4IPcYFi655PPvBM=
 github.com/google/go-github/v72 v72.0.0/go.mod h1:WWtw8GMRiL62mvIquf1kO3onRHeWWKmK01qdCY8c5fg=
 github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD/fhyJ8=
@@ -226,8 +224,6 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.42.1 h1:iN1rCUX+44NZ1Dc97MPoeFYbFR0vh8zxoxMFwKdyZ6I=
 github.com/onsi/gomega v1.42.1/go.mod h1:REff/hsDsodHoKlWsP2mAPhu1+5/6hVYNf9rIEBpeSg=
-github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
-github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/openshift/api v0.0.0-20250820105013-6282350d0c39 h1:X42iTyo3AAHS36BkiBkU8FvxfK8NEDmnBi3QrnaCIlA=
 github.com/openshift/api v0.0.0-20250820105013-6282350d0c39/go.mod h1:SPLf21TYPipzCO67BURkCfK6dcIIxx0oNRVWaOyRcXM=
 github.com/operator-framework/api v0.45.0 h1:hkROwtsLH3oszp4IW+WsXEFSDgveSahHI7DKStOtrUI=
@@ -491,12 +487,8 @@ k8s.io/utils v0.0.0-20260507154919-ff6756f316d2 h1:wU4tMEhLGgIbLvXQb1cfN+EcM0wf7
 k8s.io/utils v0.0.0-20260507154919-ff6756f316d2/go.mod h1:xDxuJ0whA3d0I4mf/C4ppKHxXynQ+fxnkmQH0vTHnuk=
 knative.dev/eventing v0.50.0 h1:4GSn7yyMLgpGUqU0vZjcyFKK0vSi3TtZXPVzb7HW7Ds=
 knative.dev/eventing v0.50.0/go.mod h1:HC1K7A1oa/sMd6X6RHO547NgvL2gtKlmNK+HYnELz6g=
-knative.dev/networking v0.0.0-20260727162500-c7a7b772cac9 h1:DX4tHb6E2L6sqJbbbSoK7ury7jobfC95Tx3To+tQQF0=
-knative.dev/networking v0.0.0-20260727162500-c7a7b772cac9/go.mod h1:B1jEsChm8uZvhXwuc7ySZEKG8B6GK+FrQeGx+cL7GGc=
 knative.dev/pkg v0.0.0-20260727151759-521cb33b33dd h1:Tpo7m+KdcccVGygF/fr0af9Qv4CG4DTAE756fEDURIo=
 knative.dev/pkg v0.0.0-20260727151759-521cb33b33dd/go.mod h1:H+Z0Cy8MsihAolnB4luN7/7RV96ed8VzLvf4jzE8OP4=
-knative.dev/serving v0.50.0 h1:9XUQq2yqUPN1YZUuGH6nF8IMvuumNvGXzCrSTYu44bA=
-knative.dev/serving v0.50.0/go.mod h1:MP+yKsx/gLczU+agah1HgRrpU6KT0SV96a7bD+v5PKo=
 sigs.k8s.io/controller-runtime v0.24.1 h1:miPEwrmirImAvgME1L9qebGHrOnGJoVmVdtOU9fRfo4=
 sigs.k8s.io/controller-runtime v0.24.1/go.mod h1:vFkfY5fGt5xAC/sKb8IBFKgWPNKG9OUG29dR8Y2wImw=
 sigs.k8s.io/gateway-api v1.6.1 h1:mock6phZbI6rvZerwrVNk7hVNymQgHo+6sJ81Ia7ftY=

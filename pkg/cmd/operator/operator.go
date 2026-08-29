@@ -52,7 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
+	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	"github.com/apache/camel-k/v2/pkg/apis"
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"

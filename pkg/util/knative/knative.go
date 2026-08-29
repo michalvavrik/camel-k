@@ -40,7 +40,8 @@ import (
 	"knative.dev/pkg/apis/duck"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
 	"knative.dev/pkg/tracker"
-	serving "knative.dev/serving/pkg/apis/serving/v1"
+
+	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	"github.com/apache/camel-k/v2/pkg/client"
 	util "github.com/apache/camel-k/v2/pkg/util/kubernetes"

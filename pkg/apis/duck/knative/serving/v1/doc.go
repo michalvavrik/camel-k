@@ -15,13 +15,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apis
-
-import (
-	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
-)
-
-func init() {
-	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, serving.AddToScheme)
-}
+// Package v1 contains a partial (duck-typed) schema of the Knative Serving API
+// (serving.knative.dev/v1). It mirrors only the subset of the upstream
+// knative.dev/serving types that Camel K produces and consumes, so that the
+// operator no longer needs to depend on the full knative.dev/serving module.
+//
+// The struct shapes (field names, JSON tags and embeddings) are intentionally
+// kept byte-for-byte identical to the upstream types to preserve the exact
+// wire format of the Knative Service resources Camel K creates.
+//
+// +kubebuilder:object:generate=true
+// +groupName=serving.knative.dev
+package v1

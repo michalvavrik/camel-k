@@ -26,18 +26,20 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
+
+	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/v2/pkg/apis/camel/v1/trait"
 
 	"github.com/apache/camel-k/v2/pkg/util/log"
 
-	"github.com/apache/camel-k/v2/pkg/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
+
+	"github.com/apache/camel-k/v2/pkg/internal"
 )
 
 func TestMonitorSyntheticIntegrationImportingKindUnavailable(t *testing.T) {

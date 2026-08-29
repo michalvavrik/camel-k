@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	serving "knative.dev/serving/pkg/apis/serving/v1"
+	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

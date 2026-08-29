@@ -29,7 +29,8 @@ import (
 
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
+
+	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
 )

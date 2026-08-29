@@ -60,7 +60,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
+	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
+
+	configv1 "github.com/openshift/api/config/v1"
+	projectv1 "github.com/openshift/api/project/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/apache/camel-k/v2/e2e/support/util"
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
@@ -73,10 +78,6 @@ import (
 	"github.com/apache/camel-k/v2/pkg/util/log"
 	"github.com/apache/camel-k/v2/pkg/util/openshift"
 	"github.com/apache/camel-k/v2/pkg/util/patch"
-	configv1 "github.com/openshift/api/config/v1"
-	projectv1 "github.com/openshift/api/project/v1"
-	routev1 "github.com/openshift/api/route/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const kubeConfigEnvVar = "KUBECONFIG"

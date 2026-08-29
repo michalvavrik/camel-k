@@ -35,7 +35,8 @@ import (
 	messaging "knative.dev/eventing/pkg/apis/messaging/v1"
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
-	serving "knative.dev/serving/pkg/apis/serving/v1"
+
+	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
 	traitv1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1/trait"

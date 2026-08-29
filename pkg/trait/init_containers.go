@@ -25,12 +25,13 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	serving "knative.dev/serving/pkg/apis/serving/v1"
+	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
+
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/ptr"
 
 	traitv1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1/trait"
 	"github.com/apache/camel-k/v2/pkg/util/defaults"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 const (

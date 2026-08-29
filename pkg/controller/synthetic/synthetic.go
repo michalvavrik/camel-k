@@ -22,21 +22,21 @@ import (
 	"fmt"
 	"reflect"
 
-	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
-	"github.com/apache/camel-k/v2/pkg/apis/camel/v1/trait"
-	"github.com/apache/camel-k/v2/pkg/client"
-	"github.com/apache/camel-k/v2/pkg/platform"
-	"github.com/apache/camel-k/v2/pkg/util/kubernetes"
-	"github.com/apache/camel-k/v2/pkg/util/log"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgocache "k8s.io/client-go/tools/cache"
-	"knative.dev/serving/pkg/apis/serving"
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
+
+	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
+	"github.com/apache/camel-k/v2/pkg/apis/camel/v1/trait"
+	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
+	"github.com/apache/camel-k/v2/pkg/client"
+	"github.com/apache/camel-k/v2/pkg/platform"
+	"github.com/apache/camel-k/v2/pkg/util/kubernetes"
+	"github.com/apache/camel-k/v2/pkg/util/log"
 )
 
 var (
@@ -143,7 +143,7 @@ func getInformers(ctx context.Context, cl client.Client, c cache.Cache) ([]cache
 	}
 	// Watch for the Knative Services conditionally
 	if ok, err := kubernetes.IsAPIResourceInstalled(cl, servingv1.SchemeGroupVersion.String(), reflect.TypeFor[servingv1.Service]().Name()); ok && err == nil {
-		if ok, err := kubernetes.CheckSelfPermission(ctx, cl, serving.GroupName, "services", platform.GetOperatorWatchNamespace(), "", "watch"); ok && err == nil {
+		if ok, err := kubernetes.CheckSelfPermission(ctx, cl, servingv1.GroupName, "services", platform.GetOperatorWatchNamespace(), "", "watch"); ok && err == nil {
 			ksvc, err := c.GetInformer(ctx, &servingv1.Service{})
 			if err != nil {
 				return nil, err

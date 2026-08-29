@@ -26,13 +26,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
+
 	v1 "github.com/apache/camel-k/v2/pkg/apis/camel/v1"
+	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 	"github.com/apache/camel-k/v2/pkg/client"
 	"github.com/apache/camel-k/v2/pkg/platform"
 	"github.com/apache/camel-k/v2/pkg/util/kubernetes"
 	"github.com/apache/camel-k/v2/pkg/util/log"
-	serving "knative.dev/serving/pkg/apis/serving/v1"
-	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func Apply(ctx context.Context, c client.Client, integration *v1.Integration, kit *v1.IntegrationKit) (*Environment, error) {

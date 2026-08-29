@@ -27,7 +27,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 
-	serving "knative.dev/serving/pkg/apis/serving/v1"
+	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
 	routev1 "github.com/openshift/api/route/v1"
 
