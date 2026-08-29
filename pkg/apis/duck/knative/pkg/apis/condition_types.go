@@ -55,28 +55,28 @@ const (
 type Condition struct {
 	// Type of condition.
 	// +required
-	Type ConditionType `json:"type" description:"type of status condition"`
+	Type ConditionType `json:"type"`
 
 	// Status of the condition, one of True, False, Unknown.
 	// +required
-	Status corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`
+	Status corev1.ConditionStatus `json:"status"`
 
 	// Severity with which to treat failures of this type of condition.
 	// When this is not specified, it defaults to Error.
 	// +optional
-	Severity ConditionSeverity `json:"severity,omitempty" description:"how to interpret failures of this condition, one of Error, Warning, Info"`
+	Severity ConditionSeverity `json:"severity,omitempty"`
 
 	// LastTransitionTime is the last time the condition transitioned from one status to another.
 	// +optional
-	LastTransitionTime VolatileTime `json:"lastTransitionTime,omitempty" description:"last time the condition transit from one status to another"`
+	LastTransitionTime VolatileTime `json:"lastTransitionTime,omitempty"`
 
 	// The reason for the condition's last transition.
 	// +optional
-	Reason string `json:"reason,omitempty" description:"one-word CamelCase reason for the condition's last transition"`
+	Reason string `json:"reason,omitempty"`
 
 	// A human readable message indicating details about the transition.
 	// +optional
-	Message string `json:"message,omitempty" description:"human-readable message indicating details about last transition"`
+	Message string `json:"message,omitempty"`
 }
 
 // IsTrue is true if the condition is True.

@@ -40,7 +40,7 @@ type Status struct {
 	// +optional
 	// +patchMergeKey=type
 	// +patchStrategy=merge
-	Conditions apis.Conditions `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+	Conditions apis.Conditions `json:"conditions,omitempty" patchMergeKey:"type" patchStrategy:"merge"`
 
 	// Annotations is additional Status fields for the Resource to save some additional State
 	// as well as convey more information to the user. This is roughly akin to Annotations on any
