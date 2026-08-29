@@ -1,0 +1,44 @@
+# ---------------------------------------------------------------------------
+# VERIFICATION-ONLY workflow (issue #6354 Knative duck-types migration).
+# This file lives only on the dev-auto/camel-k-6354/gh-ci verification branch.
+# It is NOT intended for the upstream PR. It runs a lean, selected set of
+# tests on push so we can verify changes against real infrastructure and
+# read the result via `gh`, without triggering the full CI matrix.
+# ---------------------------------------------------------------------------
+name: verify-knative
+
+on:
+  push:
+    branches:
+      - 'dev-auto/camel-k-6354/**'
+  workflow_dispatch:
+
+concurrency:
+  group: verify-knative-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  knative-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+
+      - name: Knative-related unit tests
+        run: |
+          go test -count=1 -v \
+            ./pkg/util/knative/... \
+            ./pkg/internal/knative/... \
+            ./pkg/util/reference/... \
+            ./pkg/util/bindings/... \
+            ./pkg/apis/camel/v1/... 2>&1 | tail -60
+          echo "---- trait knative subset ----"
+          go test -count=1 ./pkg/trait/ -run 'Knative|SinkBinding|Sink|Channel|Broker|Trigger'
