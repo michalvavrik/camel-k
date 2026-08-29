@@ -21,37 +21,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis"
 )
 
 const (
-	// KnativeServingGroup is the API group for Knative Serving resources.
-	KnativeServingGroup = "serving.knative.dev"
-	// KnativeServingVersion is the API version supported by these duck types.
-	KnativeServingVersion = "v1"
-	// GroupName is the API group for Knative Serving resources (alias kept for
-	// parity with the upstream knative.dev/serving/pkg/apis/serving package).
-	GroupName = KnativeServingGroup
+	// KnativeMessagingGroup is the API group for Knative Eventing Messaging.
+	KnativeMessagingGroup = "messaging.knative.dev"
+	// KnativeMessagingVersion is the API version supported by these duck types.
+	KnativeMessagingVersion = "v1"
 )
-
-// ServiceConditionReady is set when the service is configured and has available
-// backends ready to receive traffic. It matches the upstream Knative constant.
-const ServiceConditionReady = apis.ConditionReady
 
 var (
 	// SchemeGroupVersion is the group version used to register these objects.
-	SchemeGroupVersion = schema.GroupVersion{Group: KnativeServingGroup, Version: KnativeServingVersion}
-	// SchemeBuilder builds a scheme with the Knative Serving duck types.
+	SchemeGroupVersion = schema.GroupVersion{Group: KnativeMessagingGroup, Version: KnativeMessagingVersion}
+	// SchemeBuilder builds a scheme with the Knative Messaging duck types.
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	// AddToScheme registers the Knative Serving duck types with a scheme.
+	// AddToScheme registers the Knative Messaging duck types with a scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Service{},
-		&ServiceList{},
+		&Subscription{},
+		&SubscriptionList{},
+		&Channel{},
+		&ChannelList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 

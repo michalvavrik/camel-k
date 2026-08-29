@@ -36,8 +36,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"knative.dev/pkg/apis"
-	duckv1 "knative.dev/pkg/apis/duck/v1"
+
+	"github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis"
+	duckv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis/duck/v1"
 
 	"github.com/apache/camel-k/v2/pkg/internal"
 )

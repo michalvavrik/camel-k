@@ -30,16 +30,16 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/pkg/apis"
+
+	"github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis"
 
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 
-	eventing "knative.dev/eventing/pkg/apis/eventing/v1"
-	messaging "knative.dev/eventing/pkg/apis/messaging/v1"
-	sources "knative.dev/eventing/pkg/apis/sources/v1"
-	"knative.dev/pkg/apis/duck"
-	duckv1 "knative.dev/pkg/apis/duck/v1"
-	"knative.dev/pkg/tracker"
+	eventing "github.com/apache/camel-k/v2/pkg/apis/duck/knative/eventing/v1"
+	messaging "github.com/apache/camel-k/v2/pkg/apis/duck/knative/messaging/v1"
+	duckv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis/duck/v1"
+	"github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/tracker"
+	sources "github.com/apache/camel-k/v2/pkg/apis/duck/knative/sources/v1"
 
 	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
@@ -221,22 +221,26 @@ func getSinkURI(ctx context.Context, c client.Client, sink *corev1.ObjectReferen
 		return fmt.Sprintf("http://%s.%s.svc/", u.GetName(), u.GetNamespace()), nil
 	}
 
-	t := duckv1.AddressableType{}
-	err = duck.FromUnstructured(u, &t)
+	// Read the addressable status URL directly from the unstructured object.
+	// Knative addressable resources expose it at .status.address.url as a string
+	// (the apis.URL type marshals to a plain string).
+	addressURL, found, err := unstructured.NestedString(u.Object, "status", "address", "url")
 	if err != nil {
-		return "", fmt.Errorf("failed to deserialize sink %s: %w", objIdentifier, err)
+		return "", fmt.Errorf("failed to read address of sink %s: %w", objIdentifier, err)
 	}
-
-	if t.Status.Address == nil || t.Status.Address.URL == nil {
+	if !found || addressURL == "" {
 		return "", fmt.Errorf("sink %s does not contain address or URL", objIdentifier)
 	}
 
-	addressURL := t.Status.Address.URL
-	if addressURL.Host == "" {
+	parsedURL, err := url.Parse(addressURL)
+	if err != nil {
+		return "", fmt.Errorf("sink %s contains an invalid URL %q: %w", objIdentifier, addressURL, err)
+	}
+	if parsedURL.Host == "" {
 		return "", fmt.Errorf("sink %s contains an empty hostname", objIdentifier)
 	}
 
-	return addressURL.String(), nil
+	return addressURL, nil
 }
 
 // EnableKnativeBindInNamespace sets the "bindings.knative.dev/include=true" label to the namespace, only

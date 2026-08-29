@@ -27,8 +27,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"knative.dev/pkg/apis"
-	duckv1 "knative.dev/pkg/apis/duck/v1"
+	"github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis"
+	duckv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis/duck/v1"
 
 	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 

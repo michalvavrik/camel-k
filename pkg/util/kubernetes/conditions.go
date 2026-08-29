@@ -22,7 +22,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	knative "knative.dev/pkg/apis"
+	knative "github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis"
 
 	servingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 )

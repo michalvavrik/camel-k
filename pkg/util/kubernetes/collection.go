@@ -23,11 +23,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	messaging "knative.dev/eventing/pkg/apis/messaging/v1"
+
+	messaging "github.com/apache/camel-k/v2/pkg/apis/duck/knative/messaging/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 
-	eventing "knative.dev/eventing/pkg/apis/eventing/v1"
+	eventing "github.com/apache/camel-k/v2/pkg/apis/duck/knative/eventing/v1"
 
 	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 

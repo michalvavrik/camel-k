@@ -15,17 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apis
-
-import (
-	eventingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/eventing/v1"
-	messagingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/messaging/v1"
-	sourcesv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/sources/v1"
-)
-
-func init() {
-	// Register the (duck) types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, eventingv1.AddToScheme)
-	AddToSchemes = append(AddToSchemes, messagingv1.AddToScheme)
-	AddToSchemes = append(AddToSchemes, sourcesv1.AddToScheme)
-}
+// Package v1 contains a partial (duck-typed) schema of the Knative Eventing
+// Messaging API (messaging.knative.dev/v1): the Subscription that Camel K
+// produces and the Channel it resolves. It mirrors the upstream
+// knative.dev/eventing types, keeping the wire format identical.
+//
+// +kubebuilder:object:generate=true
+// +groupName=messaging.knative.dev
+package v1

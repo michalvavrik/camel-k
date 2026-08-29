@@ -30,11 +30,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
-	eventingduckv1 "knative.dev/eventing/pkg/apis/duck/v1"
-	eventing "knative.dev/eventing/pkg/apis/eventing/v1"
-	messaging "knative.dev/eventing/pkg/apis/messaging/v1"
-	"knative.dev/pkg/apis"
-	duckv1 "knative.dev/pkg/apis/duck/v1"
+	eventing "github.com/apache/camel-k/v2/pkg/apis/duck/knative/eventing/v1"
+	messaging "github.com/apache/camel-k/v2/pkg/apis/duck/knative/messaging/v1"
+	"github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis"
+	duckv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/pkg/apis/duck/v1"
 
 	serving "github.com/apache/camel-k/v2/pkg/apis/duck/knative/serving/v1"
 
@@ -1343,11 +1342,9 @@ func newFakeClient(namespace string) (client.Client, error) {
 				Name:      "channel-source-1",
 			},
 			Status: messaging.ChannelStatus{
-				ChannelableStatus: eventingduckv1.ChannelableStatus{
-					AddressStatus: duckv1.AddressStatus{
-						Address: &duckv1.Addressable{
-							URL: channelSourceURL,
-						},
+				AddressStatus: duckv1.AddressStatus{
+					Address: &duckv1.Addressable{
+						URL: channelSourceURL,
 					},
 				},
 			},
@@ -1362,11 +1359,9 @@ func newFakeClient(namespace string) (client.Client, error) {
 				Name:      "channel-sink-1",
 			},
 			Status: messaging.ChannelStatus{
-				ChannelableStatus: eventingduckv1.ChannelableStatus{
-					AddressStatus: duckv1.AddressStatus{
-						Address: &duckv1.Addressable{
-							URL: channelSinkURL,
-						},
+				AddressStatus: duckv1.AddressStatus{
+					Address: &duckv1.Addressable{
+						URL: channelSinkURL,
 					},
 				},
 			},

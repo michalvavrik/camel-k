@@ -15,17 +15,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This file is a partial copy of knative.dev/pkg/apis/volatile_time.go
+// (Apache License 2.0, The Knative Authors).
+
 package apis
 
 import (
-	eventingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/eventing/v1"
-	messagingv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/messaging/v1"
-	sourcesv1 "github.com/apache/camel-k/v2/pkg/apis/duck/knative/sources/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func init() {
-	// Register the (duck) types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, eventingv1.AddToScheme)
-	AddToSchemes = append(AddToSchemes, messagingv1.AddToScheme)
-	AddToSchemes = append(AddToSchemes, sourcesv1.AddToScheme)
+// VolatileTime wraps metav1.Time. It is used to represent times that are not
+// semantically significant and thus should be ignored in equality checks.
+type VolatileTime struct {
+	Inner metav1.Time `json:",inline"`
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (t VolatileTime) MarshalJSON() ([]byte, error) {
+	return t.Inner.MarshalJSON()
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (t *VolatileTime) UnmarshalJSON(b []byte) error {
+	return t.Inner.UnmarshalJSON(b)
 }
