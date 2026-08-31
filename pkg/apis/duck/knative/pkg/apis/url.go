@@ -26,7 +26,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+
+	"k8s.io/apimachinery/pkg/api/equality"
 )
+
+func init() {
+	// Register a semantic-equality func for URL. This is required because URL
+	// embeds url.URL, which contains an unexported *url.Userinfo field that makes
+	// reflection-based semantic equality panic. It mirrors the upstream
+	// knative.dev/pkg/apis init() and is relied upon by the operator's
+	// StatusChangedPredicate (equality.Semantic.DeepDerivative over a Knative
+	// Service status, which holds apis.URL values).
+	if err := equality.Semantic.AddFunc(
+		func(a, b URL) bool {
+			return a.String() == b.String()
+		},
+	); err != nil {
+		panic(err)
+	}
+}
 
 // URL is an alias of url.URL. It has custom json marshal methods that enable it
 // to be used in K8s CRDs such that the CRD resource will have the URL but
