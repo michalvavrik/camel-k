@@ -21,8 +21,24 @@ limitations under the License.
 package apis
 
 import (
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func init() {
+	// Register a semantic-equality func that treats any two VolatileTime values
+	// as equal. This mirrors the upstream knative.dev/pkg/apis init() and is the
+	// whole point of the type: a change limited to a condition's
+	// LastTransitionTime must not be seen as a status change by the operator's
+	// StatusChangedPredicate, otherwise it triggers redundant reconciles.
+	if err := equality.Semantic.AddFunc(
+		func(VolatileTime, VolatileTime) bool {
+			return true
+		},
+	); err != nil {
+		panic(err)
+	}
+}
 
 // VolatileTime wraps metav1.Time. It is used to represent times that are not
 // semantically significant and thus should be ignored in equality checks.
